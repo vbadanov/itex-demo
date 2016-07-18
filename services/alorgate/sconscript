@@ -1,0 +1,53 @@
+#!/usr/bin/python
+
+import os
+
+Import('env')
+
+bin_name = 'itex-alorgate'
+
+src_dir = Dir('.').abspath
+
+targets = [
+            #os.path.join(src_dir, 'alorgate', 'bin', 'x64', 'Release', 'Atentis.Connection.dll'),
+            #os.path.join(src_dir, 'alorgate', 'bin', 'x64', 'Release', 'itex-alorgate.exe'),
+            os.path.join(src_dir, 'demo-alorgate', 'bin', 'x64', 'Release', 'itex-demo-alorgate.exe'),
+            #os.path.join(src_dir, 'alorgate', 'bin', 'x64', 'Release', 'messages.dll'),
+            #os.path.join(src_dir, 'alorgate', 'bin', 'x64', 'Release', 'Microsoft.VisualBasic.dll'),
+            #os.path.join(src_dir, 'alorgate', 'bin', 'x64', 'Release', 'RestSharp.dll'),
+            #os.path.join(src_dir, 'alorgate', 'bin', 'x64', 'Release', 'FlatBuffers.dll'),
+            #os.path.join(src_dir, 'alorgate', 'bin', 'x64', 'Release', 'Newtonsoft.Json.dll'),
+          ]
+
+#===============================================================================
+bins_for_alorgate = [
+                       Glob(os.path.join(env['EXTERNALS_DIR'], 'atentis', 'libkernel32.so')),
+                    ]
+
+
+local_env = env.Clone()
+
+
+#==================================== Build ===========================================
+if env.GetOption('clean'):
+    local_env.Execute('xbuild /p:Configuration="Release" /p:Platform=x64 /tv:4.0 /p:TargetFrameworkVersion=v4.5 /t:Clean  alorgate.sln')
+
+local_env.Command(targets, 'alorgate.sln', ''.join(['xbuild /p:Configuration="Release" /p:Platform=x64 /tv:4.0 /p:TargetFrameworkVersion=v4.5', ' /t:Clean' if env.GetOption('clean') else '', ' $SOURCE']))
+local_env.Depends(targets, env['DEPENDENCIES']['common/message'])
+    
+local_env.Install(os.path.join(env['STAGE_DIR'], 'bin'), targets)
+local_env.Install(os.path.join(env['STAGE_DIR'], 'bin'), bins_for_alorgate)
+
+
+additional_clean_paths = [
+                           os.path.join(src_dir, 'alorgate', 'bin'),
+                           os.path.join(src_dir, 'alorgate', 'obj'),
+                           os.path.join(src_dir, 'demo-alorgate', 'bin'),
+                           os.path.join(src_dir, 'demo-alorgate', 'obj'),
+                           os.path.join(src_dir, 'Microsoft.VisualBasic', 'bin'),
+                           os.path.join(src_dir, 'Microsoft.VisualBasic', 'obj'),
+                         ]
+env.Clean(targets, additional_clean_paths);
+
+
+

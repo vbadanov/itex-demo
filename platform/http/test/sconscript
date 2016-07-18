@@ -1,0 +1,49 @@
+#!/usr/bin/python
+
+import os
+import platform
+
+Import('env')
+
+
+src_dir = Dir('.').abspath
+
+
+libs = [
+         'boost_regex',
+         'boost_system',
+         'boost_thread',
+         #'boost_random',
+         #'boost_filesystem',
+         #'boost_date_time',
+         'boost_context',
+         'boost_coroutine',
+         'http_parser',
+         'pthread',
+         'gtest',
+         'pthread',
+         'http',
+         'aux',
+         'cityhash'
+       ]
+
+
+local_env = env.Clone()
+#===============================================================================
+# Uncomment the line below to enable Boost.Asio debug logging of async events
+#local_env['CCFLAGS'].append(['-DBOOST_ASIO_ENABLE_HANDLER_TRACKING', '-Wno-unused-variable', '-Wno-unused-result']);
+#===============================================================================
+if not platform.platform().startswith('Darwin'):
+    libs.append(['tcmalloc'])
+    local_env['CCFLAGS'].append(['-fno-builtin-malloc', '-fno-builtin-calloc', '-fno-builtin-realloc', '-fno-builtin-free'])
+
+
+#==================================== Build ===========================================
+http_test = local_env.Program('http-test', ['http-test.cpp'], LIBS = libs)
+local_env.Install(os.path.join(env['STAGE_DIR'], 'bin'), http_test)
+
+http_server_test = local_env.Program('http-server-test', ['http-server-test.cpp'], LIBS = libs)
+local_env.Install(os.path.join(env['STAGE_DIR'], 'bin'), http_server_test)
+
+http_hammer = local_env.Program('http-hammer', ['http-hammer.cpp'], LIBS = libs)
+local_env.Install(os.path.join(env['STAGE_DIR'], 'bin'), http_hammer)

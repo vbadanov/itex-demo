@@ -1,0 +1,13 @@
+﻿<Properties StartupItem="alorgate/alorgate.csproj">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Release|x64" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="alorgate/AlorTradeConnector.cs">
+    <Files>
+      <File FileName="alorgate/Program.cs" Line="1" Column="1" />
+      <File FileName="alorgate/AlorTradeConnector.cs" Line="1" Column="1" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>

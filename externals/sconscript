@@ -1,0 +1,91 @@
+#!/usr/bin/python
+
+import os
+import sys
+
+sys.path.append(os.path.join(os.getcwd(), 'tools', 'build'))
+import aux
+
+env = Environment(ENV = os.environ)
+
+env['INSTALL'] = aux.InstallAndPreserveSymlinks  #Replace default Install() with function which preserve symlinks 
+
+curdir = os.getcwd();
+env['STAGE_DIR'] = os.path.join(curdir, 'stage')
+env['EXTERNALS_BUILD_DIR'] = os.path.join(curdir, 'externals', '.build')
+
+def install_libs(dst_dir, lib_dir, lib_list):
+    env.Install(os.path.join(env['STAGE_DIR'], dst_dir), source = [Glob(os.path.join(env['EXTERNALS_BUILD_DIR'], '{0}/{1}'.format(lib_dir, elt))) for elt in lib_list])
+
+
+#===============================================================================
+#Install Boost
+boost_libs = [
+                'lib/libboost*.so*',
+             ]
+install_libs('lib', 'boost', boost_libs)
+
+
+#===============================================================================
+#Install Protobuf
+protobuf_libs = [
+                    'lib/libprotobuf.so*',
+                ]
+install_libs('lib', 'protobuf', protobuf_libs)
+
+
+#===============================================================================
+#Install Postgresql Client library
+postgresql_libs = [
+                     'lib/libpq.so*',
+                  ]
+install_libs('lib', 'postgresql', postgresql_libs)
+
+
+#===============================================================================
+#Install gperftools/tcmalloc
+gperftools_libs = [
+                     'lib/libtcmalloc.so*',
+                     'lib/libprofiler.so*',
+                  ]
+install_libs('lib', 'gperftools', gperftools_libs)
+
+#===============================================================================
+#Install CityHash
+cityhash_libs = [
+                     'lib/libcityhash.so*',
+                  ]
+install_libs('lib', 'cityhash', cityhash_libs)
+
+#===============================================================================
+#Install http-parser
+http_parser_libs = [
+                     'lib/libhttp_parser.so*',
+                  ]
+install_libs('lib', 'http-parser', http_parser_libs)
+
+#===============================================================================
+#Install MathGL library
+mathgl_libs = [
+                     'lib/libmgl.so*',
+                  ]
+install_libs('lib', 'mathgl', mathgl_libs)
+
+#===============================================================================
+#Install cgate
+cgate_bins = [
+                     'bin/P2MQRouter',
+             ]
+cgate_libs = [
+                     'lib/libcgate.so*',
+                     'lib/libminIni.so*',
+                     'lib/libP2*.so*',
+             ]
+cgate_etcs = [
+                    'client_router.ini',
+                    'scheme',
+             ]
+install_libs('bin', 'cgate', cgate_bins)
+install_libs('lib', 'cgate', cgate_libs)
+install_libs('etc', 'cgate', cgate_etcs)
+

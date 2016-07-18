@@ -1,0 +1,1 @@
+psql -h 192.168.0.15 -U postgres -a -f ./stage/init/init-demo.sql

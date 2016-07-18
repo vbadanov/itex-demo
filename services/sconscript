@@ -1,0 +1,16 @@
+#!/usr/bin/python
+
+import os
+
+
+scripts = [
+            #'orderbook-dumper/sconscript',
+            'demo-manager/sconscript',
+            #'demo-worker/sconscript',
+            'alorgate/sconscript',
+            #'cgatepp/sconscript',
+          ]
+
+SConscript(scripts)
+
+

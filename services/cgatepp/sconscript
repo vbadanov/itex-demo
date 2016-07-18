@@ -1,0 +1,57 @@
+#!/usr/bin/python
+
+import os
+import platform
+
+Import('env')
+
+lib_name = 'cgatepp'
+
+src_dir = Dir('.').abspath
+
+#===============================================================================
+protobuf_sources = [
+                     os.path.join(src_dir, 'src/*.proto')
+                   ]
+if not env.GetOption('clean'):
+    to_dir = os.path.join(src_dir, 'src');
+    for file in protobuf_sources:   
+        env.Execute(''.join([os.path.join(env['EXTERNALS_BUILD_DIR'], 'protobuf', 'bin', 'protoc'), ' --cpp_out=', to_dir, ' -I', to_dir, ' ', file]))
+
+
+#===============================================================================
+sources = [
+            Glob(os.path.join(src_dir, 'src', '*.cpp')),
+            Glob(os.path.join(src_dir, 'src', '*.pb.cc')),
+          ]
+
+libs = [
+         'boost_system',
+         'boost_iostreams',
+         'boost_filesystem',
+         #'boost_thread',
+         #'boost_coroutine',
+         #'pq',
+         'protobuf',
+         'cgate',
+       ]
+       
+local_env = env.Clone()
+if not platform.platform().startswith('Darwin'):
+    libs.append(['tcmalloc'])
+    local_env['CCFLAGS'].append(['-fno-builtin-malloc', '-fno-builtin-calloc', '-fno-builtin-realloc', '-fno-builtin-free'])
+
+
+#===============================================================================
+# Build
+cgatepp_lib = local_env.SharedLibrary(lib_name, sources, LIBS = libs)
+local_env.Install(os.path.join(env['STAGE_DIR'], 'lib'), cgatepp_lib)
+
+additional_clean_paths = [
+                           Glob(os.path.join(src_dir, 'src/*.pb.h')),
+                           Glob(os.path.join(src_dir, 'src/*.pb.cc')),
+                         ]
+
+env.Clean(cgatepp_lib, additional_clean_paths);
+
+SConscript(['test/sconscript'])

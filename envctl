@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+
+import sys
+import os
+import configparser
+import subprocess
+import shutil
+
+DEFAULT_DIR = os.getcwd()
+SECTION_NAME = 'externals'
+DEPENDENCIES_CONF_FILE_PATH = '{0}/etc/deps.conf'.format(DEFAULT_DIR)
+EXTERNALS_PATH = '{0}/externals'.format(DEFAULT_DIR)
+EXTERNALS_BUILD_PATH = '{0}/.build'.format(EXTERNALS_PATH)
+BUILT_VERSIONS_LOCK_FILE_PATH = '{0}/built_versions.lock'.format(EXTERNALS_BUILD_PATH)
+BUILD_LOG_FILE_PATH = '{0}/build.log'.format(EXTERNALS_BUILD_PATH)
+TOOLS_PATH = 'scripts'  # this path is relative to EXTERNALS_PATH (see cwd parameter in subprocess.Popen)
+
+#======================================================================================================================
+def update():
+    # Get list of external packages to build
+    config = configparser.ConfigParser()
+    config.read(DEPENDENCIES_CONF_FILE_PATH)
+    
+    if not os.path.isdir(EXTERNALS_BUILD_PATH):
+        os.makedirs(EXTERNALS_BUILD_PATH)
+        
+    built = configparser.ConfigParser()
+    if len(built.read(BUILT_VERSIONS_LOCK_FILE_PATH)) == 0:  # no lock file yet
+        built.add_section(SECTION_NAME)
+    
+    try:
+        for lib_name, archive_name in config[SECTION_NAME].items():
+            module_path = '{0}/{1}.py'.format(TOOLS_PATH, lib_name)
+             
+            if built[SECTION_NAME].get(lib_name, '') == archive_name:  # skip libs which version has not been changed in config
+                continue
+             
+            if not os.path.isfile('{0}/{1}'.format(EXTERNALS_PATH, module_path)):
+                print('ERROR: Can not find module {0}'.format(module_path))
+                continue
+           
+            p = subprocess.Popen(['/usr/bin/env', 'python3', module_path, archive_name, EXTERNALS_BUILD_PATH], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,  universal_newlines=False, startupinfo=None, creationflags=0, restore_signals=True, start_new_session=False, pass_fds=(), shell=False, cwd=EXTERNALS_PATH)
+            with open(BUILD_LOG_FILE_PATH, 'a') as logfile:
+                for line in p.stdout:
+                    string_line = line.decode("utf-8")
+                    print(string_line.rstrip())
+                    logfile.write(string_line)
+                    pass
+            
+            p.wait()
+            if p.returncode == 0:  # success
+                built[SECTION_NAME][lib_name] = archive_name
+            
+    finally:
+        with open(BUILT_VERSIONS_LOCK_FILE_PATH, 'w') as lockfile:
+            built.write(lockfile)   # update lock file with new versions
+
+
+def clean():
+    if os.path.isdir(EXTERNALS_BUILD_PATH):
+        shutil.rmtree(EXTERNALS_BUILD_PATH)
+
+
+#======================================================================================================================
+def print_help():
+    print('use "envctl update" or "envctl clean"') 
+
+#======================================================================================================================
+mode = {
+            'update': update,
+            'clean': clean,
+            '': print_help
+       }
+
+#======================================================================================================================
+def main():
+    if len(sys.argv) == 2:
+        mode[sys.argv[1]]()
+    else:
+        mode['']()
+
+if __name__ == '__main__':
+    main()

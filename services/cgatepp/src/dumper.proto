@@ -1,0 +1,76 @@
+
+option optimize_for = SPEED;
+
+package cgatepp.dumper;
+
+//===============================================================================
+message StreamData
+{
+    required bytes data = 1;
+    required uint64 msg_index = 2;
+    required uint32 msg_id = 3;
+    required bytes msg_name = 4;
+    
+    required int64 rev = 5;
+    required uint64 num_nulls = 6;
+    required bytes nulls = 7;
+}
+
+message ClearDeleted
+{
+    required uint32 table_idx = 1;
+    required int64 table_rev = 2;
+}
+
+message MsgData
+{
+    required bytes data = 1;
+    required uint64 msg_index = 2;
+    required uint32 msg_id = 3;
+    required bytes msg_name = 4;
+
+    required uint32 user_id = 5;
+    required bytes addr = 6;
+}
+
+message GeneralMsg
+{
+    required uint32 type = 1;
+    required bytes data = 2;
+}
+
+//===============================================================================
+message Record
+{
+    enum Type {
+        LISTENER_OPEN = 0;
+        LISTENER_CLOSE = 1;
+        TRANSACTION_BEGIN = 2;
+        TRANSACTION_COMMIT = 3;
+        STREAM_DATA = 4;
+        REPL_ONLINE = 5;
+        REPL_LIFENUM = 6;
+        REPL_CLEARDELETED = 7;
+        REPL_REPLSTATE = 8;
+        MQ_REPLY = 9;
+        MQ_TIMEOUT = 10;
+        UNKNOWN_MSG_TYPE = 11;
+        DUMPER_OPEN = 12;
+        DUMPER_CLOSE = 13;
+    }
+    
+    required Type record_type = 1;
+    required uint64 timestamp = 2;
+    
+    oneof P2Message
+    {
+        StreamData stream_data = 3;
+        uint32 repl_lifenum = 4;
+        ClearDeleted repl_cleardeleted = 5;
+        bytes repl_replstate = 6;
+        MsgData mq_reply = 7;
+        MsgData mq_timeout = 8;
+        GeneralMsg unknown_msg = 9;
+    }
+}
+

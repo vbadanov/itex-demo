@@ -1,0 +1,35 @@
+#!/usr/bin/python
+
+import os
+
+Import('env')
+
+
+src_dir = Dir('.').abspath
+
+
+libs = [
+         #'boost_regex',
+         'boost_system',
+         #'boost_thread',
+         #'boost_random',
+         #'boost_filesystem',
+         #'boost_date_time',
+         #'boost_coroutine',
+         #'pthread',
+         #'sqldb',
+         'tcmalloc',
+         'gtest',
+         'pthread',
+         'cgatepp',
+       ]
+
+
+local_env = env.Clone()
+local_env['CCFLAGS'].append(['-fno-builtin-malloc', '-fno-builtin-calloc', '-fno-builtin-realloc', '-fno-builtin-free'])
+
+
+#==================================== Build ===========================================
+cgatepp_test = local_env.Program('cgatepp-test', ['cgatepp-test.cpp'], LIBS = libs)
+local_env.Install(os.path.join(env['STAGE_DIR'], 'bin'), cgatepp_test)
+

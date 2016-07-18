@@ -1,0 +1,176 @@
+#!/usr/bin/python
+
+import os
+import sys
+import multiprocessing
+import platform
+
+
+sys.path.append(os.path.join(os.getcwd(), 'tools', 'build'))
+import aux
+
+
+scripts = [
+            'platform/sconscript',
+            'common/sconscript',
+            'services/sconscript',
+          ]
+    
+env = Environment(ENV = os.environ)
+env.Tool('csharp', toolpath = [os.path.join(os.getcwd(), 'tools', 'build', 'scons_csharp')]);
+
+if platform.platform().startswith('Darwin'):
+    env.Replace(CXX='g++-5')
+    env.Replace(CC='gcc-5')
+
+
+# set number of parallel jobs
+cpu_num = multiprocessing.cpu_count()
+if env.GetOption('num_jobs') < cpu_num:
+    env.SetOption('num_jobs', cpu_num)
+
+curdir = os.getcwd();
+env['STAGE_DIR'] = os.path.join(curdir, 'stage')
+env['EXTERNALS_DIR'] = os.path.join(curdir, 'externals')
+env['EXTERNALS_BUILD_DIR'] = os.path.join(curdir, 'externals', '.build')
+env['PLATFORM_DIR'] = os.path.join(curdir, 'platform')
+env['COMMON_DIR'] = os.path.join(curdir, 'common')
+env['DEPENDENCIES'] = dict();
+
+env.Alias('stage', env['STAGE_DIR'])
+
+dirs = [
+            env['STAGE_DIR'],
+            os.path.join(env['STAGE_DIR'], 'bin'),
+            os.path.join(env['STAGE_DIR'], 'lib'),
+            os.path.join(env['STAGE_DIR'], 'etc'),
+            os.path.join(env['STAGE_DIR'], 'log'),
+            os.path.join(env['STAGE_DIR'], 'www'),
+            os.path.join(env['STAGE_DIR'], 'var'),
+            os.path.join(env['STAGE_DIR'], 'init'),
+       ]
+
+for dir in dirs:
+    if not os.path.isdir(dir):
+        os.makedirs(dir)
+
+env.Clean(env['STAGE_DIR'], env['STAGE_DIR'])
+
+env['INSTALL'] = aux.InstallAndPreserveSymlinks  #Replace default Install() with function which preserve symlinks 
+
+#===============================================================================
+env['CPPPATH'] = [
+                    './',
+                    env['EXTERNALS_BUILD_DIR'] + '/boost/include',
+                    #env['EXTERNALS_BUILD_DIR'] + '/protobuf/include',
+                    env['EXTERNALS_BUILD_DIR'] + '/postgresql/include',
+                    env['EXTERNALS_BUILD_DIR'] + '/gperftools/include',
+                    env['EXTERNALS_BUILD_DIR'] + '/gtest/include',
+                    env['EXTERNALS_BUILD_DIR'] + '/cityhash/include',
+                    env['EXTERNALS_BUILD_DIR'] + '/http-parser/include',
+                    env['EXTERNALS_BUILD_DIR'] + '/rapidjson/include',
+                    #env['EXTERNALS_BUILD_DIR'] + '/cgate/include',
+                    env['EXTERNALS_BUILD_DIR'] + '/flatbuffers/include',
+                    env['EXTERNALS_BUILD_DIR'] + '/mathgl/include',
+                    env['EXTERNALS_BUILD_DIR'] + '/backward/include',
+                    env['EXTERNALS_DIR'] + '/lodepng',
+                    env['PLATFORM_DIR'] + '/aux/include',
+                    env['PLATFORM_DIR'] + '/sqldb/include',
+                    env['PLATFORM_DIR'] + '/http/include',
+                    env['PLATFORM_DIR'] + '/cgatepp/include',
+                    env['PLATFORM_DIR'] + '/moex-gate/include',
+                    env['PLATFORM_DIR'] + '/evolution/include',
+                    env['COMMON_DIR'] + '/quant/include',
+                 ]
+
+#===============================================================================
+env['LIBPATH'] =  [
+                    env['EXTERNALS_BUILD_DIR'] + '/boost/lib',
+                    #env['EXTERNALS_BUILD_DIR'] + '/protobuf/lib',
+                    env['EXTERNALS_BUILD_DIR'] + '/postgresql/lib',
+                    env['EXTERNALS_BUILD_DIR'] + '/gperftools/lib',
+                    env['EXTERNALS_BUILD_DIR'] + '/gtest/lib',
+                    env['EXTERNALS_BUILD_DIR'] + '/cityhash/lib',
+                    env['EXTERNALS_BUILD_DIR'] + '/http-parser/lib',
+                    #env['EXTERNALS_BUILD_DIR'] + '/cgate/lib',
+                    env['EXTERNALS_BUILD_DIR'] + '/flatbuffers/lib',
+                    env['EXTERNALS_BUILD_DIR'] + '/mathgl/lib',
+                    env['STAGE_DIR'] + '/lib', 
+                  ]
+ 
+env["CLIREFPATHS"] = [
+                      env['EXTERNALS_BUILD_DIR'] + '/flatbuffers/lib', 
+                    ]
+#===============================================================================
+env['CCFLAGS'].append(['-Wall', '-Werror', '-std=c++14', '-fext-numeric-literals', '-Wno-unused-local-typedefs', '-Wno-unused-variable', '-mfpmath=sse', '-mavx', '-march=sandybridge', '-malign-data=cacheline']) #, '-fsanitize=alignment']) #'-march=core-avx-i'])
+env['CCFLAGS'].append(['-DRAPIDJSON_SSE42', '-DRAPIDJSON_HAS_STDSTRING'])
+env['CCFLAGS'].append(['-DUSE_OPENMP', '-fopenmp'])
+env['CCFLAGS'].append(['-DBOOST_UUID_USE_SSE41'])
+
+
+if platform.platform().startswith('Darwin'):
+    env['CCFLAGS'].append(['-I/usr/include/c++/4.2.1/', '-nostdinc++', '-nodefaultlibs', '-lc++', '-lc++abi', '-lm', '-lc', '-lgcc_s', '-lgcc'])
+    
+#===============================================================================
+# Need investigation if these is really needed, see http://habrahabr.ru/company/mailru/blog/191756/
+# env['CCFLAGS'].append(['-DBOOST_ASIO_ENABLE_SEQUENTIAL_STRAND_ALLOCATION']);
+# env['CCFLAGS'].append(['-DBOOST_ASIO_STRAND_IMPLEMENTATIONS=10000']);
+#===============================================================================
+
+no_flto = ARGUMENTS.get('no-flto', 0)
+if not int(no_flto):
+    env['CCFLAGS'].append(['-flto={0}'.format(cpu_num)])
+    env['LINKFLAGS'].append(['-flto={0}'.format(cpu_num)])
+
+
+debug = ARGUMENTS.get('debug', 0)
+if int(debug):
+    # no optimizations with debug info
+    env['CCFLAGS'].append(['-DSTACK_SENTINEL_ON']);
+    env['CCFLAGS'].append(['-ggdb3', '-Wl,-ggdb3'])
+    env['LINKFLAGS'].append(['-ggdb3'])
+    #env['CCFLAGS'].append(['-ggdb3', '-fno-omit-frame-pointer', '-fsanitize=address']) #, '-Wl,-fsanitize=address', '-Wl,--no-undefined', '-fPIC', '-lasan'])
+    #env['LINKFLAGS'].append(['-ggdb3'])
+else:
+    # optimizations without debug info
+    # !!!WARNING!!! DO NOT USE -Ofast because floating point arithmetics is incorrenct - std::isfinite(...) does not work
+    env['CCFLAGS'].append(['-O3'])
+    env['LINKFLAGS'].append(['-O3'])
+    #env['CCFLAGS'].append(['-Ofast', '-flto={0}'.format(cpu_num)])
+    
+debug_info = ARGUMENTS.get('debug-info', 0)
+if int(debug_info):
+    env['CCFLAGS'].append(['-DSTACK_SENTINEL_ON']);
+    env['CCFLAGS'].append(['-ggdb3', '-Wl,-ggdb3'])
+    env['LINKFLAGS'].append(['-ggdb3'])
+
+
+#profile = ARGUMENTS.get('profile', 0)
+#if int(profile):
+#    env['CCFLAGS'].append('-pg')
+#    env['LINKFLAGS'].append('-pg')
+
+profile_generate = ARGUMENTS.get('profile-generate', 0)
+if int(profile_generate):
+    env['CCFLAGS'].append(['-fprofile-generate', '-fprofile-correction'])
+    env['LINKFLAGS'].append(['-fprofile-generate', '-fprofile-correction'])
+
+profile_use = ARGUMENTS.get('profile-use', 0)
+if int(profile_use):
+    env['CCFLAGS'].append(['-fprofile-use', '-fprofile-correction'])
+    env['LINKFLAGS'].append(['-fprofile-use', '-fprofile-correction'])
+
+
+
+#===============================================================================
+
+if env.Execute(''.join(['scons', ' -c' if env.GetOption('clean') else '', ' -f externals/sconscript'])):
+    Exit(1)
+
+    
+Export('env')
+SConscript(scripts)
+
+
+
+

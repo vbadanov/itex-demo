@@ -1,0 +1,41 @@
+
+/etc/security/limits.conf:
+@vbadanov       soft    nofile          999999
+@vbadanov       hard    nofile          999999
+#@vbadanov      soft    stack           32000
+#@vbadanov      hard    stack           32000
+@vbadanov       soft    memlock         32000
+@vbadanov       hard    memlock         32000
+@vbadanov       soft    msgqueue        3276800
+@vbadanov       hard    msgqueue        3276800
+@vbadanov       soft    sigpending      2566310
+@vbadanov       hard    sigpending      2566310
+
+
+sysctl:
+vm.max_map_count = 1000000
+
+
+/etc/ld.so.conf.d/
+add config file with path to installed lib dir and then run 'sudo ldconfig'
+
+
+Linux - sudo apt install:
+scons
+cmake
+mono-runtime
+mono-devel
+mono-xbuild
+mono-mcs
+libbz2-dev
+libreadline-dev
+libgif-dev
+libjpeg-dev
+
+OS X - brew install: // WARNING: OS X suppport not completed yet
+homebrew/versions/gcc5
+scons
+cmake
+giflib
+libpng
+jpeg

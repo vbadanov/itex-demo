@@ -1,0 +1,47 @@
+#!/usr/bin/python
+
+import os
+import platform
+
+Import('env')
+
+lib_name = 'quant'
+
+src_dir = Dir('.').abspath
+#===============================================================================
+sources = [
+            Glob(os.path.join(src_dir, 'src', '*.cpp')),
+            Glob(os.path.join(env['EXTERNALS_DIR'], 'lodepng', 'lodepng.cpp')),
+          ]
+
+libs = [
+         'boost_system',
+         #'boost_thread',
+         #'boost_regex',
+         #'boost_coroutine',
+         #'http_parser',
+         #'pthread',
+         'gomp',
+         'aux',
+         'mgl',
+         'sqldb'
+       ]
+       
+local_env = env.Clone()
+if not platform.platform().startswith('Darwin'):
+    libs.append(['tcmalloc'])
+    local_env['CCFLAGS'].append(['-fno-builtin-malloc', '-fno-builtin-calloc', '-fno-builtin-realloc', '-fno-builtin-free'])
+
+
+#===============================================================================
+# Build
+quant_lib = local_env.SharedLibrary(lib_name, sources, LIBS = libs)
+local_env.Install(os.path.join(env['STAGE_DIR'], 'lib'), quant_lib)
+
+additional_clean_paths = [
+                               Glob(os.path.join(env['EXTERNALS_DIR'], 'lodepng', 'lodepng.o')),
+                          ]
+env.Clean(quant_lib, additional_clean_paths);
+
+
+SConscript(['test/sconscript'])

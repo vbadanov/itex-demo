@@ -1,0 +1,15 @@
+#!/usr/bin/python
+
+import os
+
+
+scripts = [
+            'aux/sconscript',
+            'sqldb/sconscript',
+            'http/sconscript',
+            #'evolution/sconscript',
+          ]
+
+SConscript(scripts)
+
+
